@@ -27,7 +27,7 @@ RUN apt-get update && apt-get install -y \
 # Install Composer globally
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-WORKDIR /app
+WORKDIR /var/www/html
 COPY composer.json composer.lock* ./
 RUN composer install --no-dev --no-interaction --prefer-dist
 
