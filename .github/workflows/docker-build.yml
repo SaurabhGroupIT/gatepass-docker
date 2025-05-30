@@ -43,7 +43,7 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/gatepass:8.2
             ${{ secrets.DOCKERHUB_USERNAME }}/gatepass:latest
-            # ghcr.io/${{ env.OWNER_LC }}/gatepass:8.2
-            # ghcr.io/${{ env.OWNER_LC }}/gatepass:latest
+          # ghcr.io/${{ env.OWNER_LC }}/gatepass:8.2
+          # ghcr.io/${{ env.OWNER_LC }}/gatepass:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
