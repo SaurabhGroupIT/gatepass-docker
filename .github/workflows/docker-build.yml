@@ -41,8 +41,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/gatepass:8.2
-            ${{ secrets.DOCKERHUB_USERNAME }}/gatepass:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/gatepass:8.2-alpine
+            ${{ secrets.DOCKERHUB_USERNAME }}/gatepass:latest-alpine
           # ghcr.io/${{ env.OWNER_LC }}/gatepass:8.2
           # ghcr.io/${{ env.OWNER_LC }}/gatepass:latest
           cache-from: type=gha
