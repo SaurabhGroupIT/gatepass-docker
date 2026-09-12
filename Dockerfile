@@ -1,20 +1,27 @@
-FROM php:8.2-fpm AS builder
+FROM php:8.2-fpm-alpine AS builder
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apk add --no-cache --virtual .build-deps \
+        $PHPIZE_DEPS \
         libzip-dev \
         libpng-dev \
-        libjpeg62-turbo-dev \
-        libfreetype6-dev \
+        libjpeg-turbo-dev \
+        freetype-dev \
+        oniguruma-dev \
+        libxml2-dev \
+        curl-dev \
         unzip \
-        git \
-    && docker-php-ext-configure gd \
+        git
+
+RUN docker-php-ext-configure gd \
         --with-freetype \
-        --with-jpeg \
-    && docker-php-ext-install -j"$(nproc)" \
+        --with-jpeg
+
+RUN docker-php-ext-install -j"$(nproc)" \
         gd \
         zip \
         mbstring \
         mysqli \
+        curl \
         xml
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -28,31 +35,33 @@ RUN composer install \
         --no-interaction \
         --prefer-dist \
         --no-progress \
-        --optimize-autoloader \
-        --no-scripts
+        --optimize-autoloader
 
 COPY . .
 
+FROM php:8.2-fpm-alpine AS production
 
-
-FROM php:8.2-fpm AS production
+RUN apk add --no-cache \
+        libzip \
+        libpng \
+        libjpeg-turbo \
+        freetype \
+        oniguruma \
+        libxml2 \
+        libcurl
 
 WORKDIR /var/www/html
 
-# Copy PHP extensions/configuration
-COPY --from=builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
-COPY --from=builder /usr/local/etc/php/conf.d/ /usr/local/etc/php/conf.d/
+COPY --from=builder \
+    /usr/local/lib/php/extensions/ \
+    /usr/local/lib/php/extensions/
 
-# Copy required shared libraries from Debian builder
-COPY --from=builder /usr/lib/x86_64-linux-gnu/libzip.so* /usr/lib/x86_64-linux-gnu/
-COPY --from=builder /usr/lib/x86_64-linux-gnu/libpng16.so* /usr/lib/x86_64-linux-gnu/
-COPY --from=builder /usr/lib/x86_64-linux-gnu/libjpeg.so* /usr/lib/x86_64-linux-gnu/
-COPY --from=builder /usr/lib/x86_64-linux-gnu/libfreetype.so* /usr/lib/x86_64-linux-gnu/
+COPY --from=builder \
+    /usr/local/etc/php/conf.d/ \
+    /usr/local/etc/php/conf.d/
 
-# Composer dependencies
-COPY --from=builder /var/www/html/vendor ./vendor
-
-# Application
-COPY . .
+COPY --from=builder \
+    /var/www/html/vendor \
+    ./vendor
 
 CMD ["php-fpm"]
