@@ -15,8 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         zip \
         mbstring \
         mysqli \
-        xml \
-    && rm -rf /var/lib/apt/lists/*
+        xml
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
@@ -32,24 +31,28 @@ RUN composer install \
         --optimize-autoloader \
         --no-scripts
 
+COPY . .
+
+
 
 FROM php:8.2-fpm AS production
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        libzip4 \
-        libpng16-16 \
-        libjpeg62-turbo \
-        libfreetype6 \
-    && rm -rf /var/lib/apt/lists/*
+WORKDIR /var/www/html
 
+# Copy PHP extensions/configuration
 COPY --from=builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
 COPY --from=builder /usr/local/etc/php/conf.d/ /usr/local/etc/php/conf.d/
 
-WORKDIR /var/www/html
+# Copy required shared libraries from Debian builder
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libzip.so* /usr/lib/x86_64-linux-gnu/
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libpng16.so* /usr/lib/x86_64-linux-gnu/
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libjpeg.so* /usr/lib/x86_64-linux-gnu/
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libfreetype.so* /usr/lib/x86_64-linux-gnu/
 
+# Composer dependencies
 COPY --from=builder /var/www/html/vendor ./vendor
 
-# Your application
+# Application
 COPY . .
 
 CMD ["php-fpm"]
